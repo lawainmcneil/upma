@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTG Wealth — Fiduciary Cost Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0D1B2A;
+    --navy-mid: #1A2E42;
+    --navy-light: #243B55;
+    --gold: #C9A84C;
+    --gold-light: #E8D59A;
+    --gold-dark: #8C6E2A;
+    --teal: #2DD4BF;
+    --teal-dark: #0F9080;
+    --white: #F8FAFC;
+    --muted: rgba(248,250,252,0.55);
+    --serif: 'DM Serif Display', Georgia, serif;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Outfit', sans-serif;
+    --border: rgba(201,168,76,0.2);
+  }
+
+  body {
+    background: var(--navy);
+    font-family: var(--sans);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(201,168,76,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(45,212,191,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.25);
+    padding: 5px 14px;
+    border-radius: 2px;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--white);
+    margin-bottom: 12px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 520px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: rgba(26,46,66,0.7);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 32px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(8px);
+  }
+
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── INPUTS ── */
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 560px) { .input-grid { grid-template-columns: 1fr; } }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-prefix {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--gold);
+    pointer-events: none;
+  }
+
+  input[type="number"], select {
+    width: 100%;
+    background: rgba(13,27,42,0.8);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 3px;
+    padding: 12px 14px 12px 32px;
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input[type="number"]:focus, select:focus {
+    border-color: var(--gold);
+  }
+
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  select {
+    padding-left: 14px;
+    cursor: pointer;
+  }
+
+  /* Slider */
+  .slider-group {
+    grid-column: 1 / -1;
+  }
+
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+
+  .slider-val {
+    font-family: var(--mono);
+    font-size: 20px;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 4px;
+    background: rgba(201,168,76,0.2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid var(--navy);
+    box-shadow: 0 0 8px rgba(201,168,76,0.4);
+  }
+
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* ── RESULTS ── */
+  .results-card {
+    background: linear-gradient(135deg, rgba(26,46,66,0.9) 0%, rgba(13,27,42,0.95) 100%);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 4px;
+    padding: 32px;
+    margin-bottom: 20px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  @media (max-width: 560px) {
+    .results-grid { grid-template-columns: 1fr; }
+  }
+
+  .result-cell {
+    background: var(--navy);
+    padding: 20px 18px;
+    text-align: center;
+  }
+
+  .result-value {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 4px;
+    transition: all 0.4s ease;
+  }
+
+  .result-value.teal { color: var(--teal); }
+  .result-value.red { color: #F87171; }
+
+  .result-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    line-height: 1.4;
+  }
+
+  /* Comparison bars */
+  .comparison-section {
+    margin-bottom: 28px;
+  }
+
+  .comp-title {
+    font-family: var(--serif);
+    font-size: 17px;
+    color: var(--white);
+    margin-bottom: 16px;
+  }
+
+  .bar-row {
+    margin-bottom: 14px;
+  }
+
+  .bar-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+
+  .bar-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .bar-amount {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--white);
+  }
+
+  .bar-track {
+    height: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .bar-fill.fiduciary { background: linear-gradient(90deg, var(--teal-dark), var(--teal)); }
+  .bar-fill.commission { background: linear-gradient(90deg, #7F1D1D, #F87171); }
+  .bar-fill.difference { background: linear-gradient(90deg, var(--gold-dark), var(--gold)); }
+
+  /* Insight box */
+  .insight-box {
+    background: rgba(45,212,191,0.06);
+    border: 1px solid rgba(45,212,191,0.2);
+    border-left: 3px solid var(--teal);
+    padding: 16px 18px;
+    border-radius: 2px;
+  }
+
+  .insight-headline {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-style: italic;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .insight-body {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* ── FIDUCIARY DIFFERENCE BAND ── */
+  .diff-band {
+    background: linear-gradient(135deg, rgba(201,168,76,0.12) 0%, rgba(201,168,76,0.06) 100%);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 4px;
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .diff-number {
+    font-family: var(--mono);
+    font-size: 44px;
+    font-weight: 500;
+    color: var(--gold);
+    line-height: 1;
+    white-space: nowrap;
+    transition: all 0.4s ease;
+  }
+
+  .diff-text h3 {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .diff-text p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ── CTA ── */
+  .cta-section {
+    text-align: center;
+    padding: 32px;
+    background: rgba(26,46,66,0.5);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  .cta-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .cta-headline {
+    font-family: var(--serif);
+    font-size: 22px;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  .cta-headline em { font-style: italic; color: var(--gold); }
+
+  .cta-body {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+
+  .cta-contacts {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .cta-contact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .contact-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gold);
+  }
+
+  .contact-email {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(248,250,252,0.2);
+    letter-spacing: 0.1em;
+    margin-top: 32px;
+  }
+
+  /* Animate in */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card, .results-card, .diff-band, .cta-section {
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .card:nth-child(2) { animation-delay: 0.1s; }
+  .results-card { animation-delay: 0.15s; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="badge">GTG Wealth Management · UPMA 2026</div>
+    <h1>What does your advisor<br>actually <em>cost</em> you?</h1>
+    <p class="subtitle">Federal employees deserve a fiduciary. See what the difference means in real dollars over your retirement — and what commission-based advice quietly takes from you.</p>
+  </header>
+
+  <!-- INPUT CARD -->
+  <div class="card">
+    <div class="card-label">Your Retirement Picture</div>
+    <div class="input-grid">
+      <div class="input-group">
+        <label>TSP Balance</label>
+        <div class="input-wrap">
+          <span class="input-prefix">$</span>
+          <input type="number" id="tsp" value="400000" min="50000" max="2000000" step="10000">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Other Savings / Investments</label>
+        <div class="input-wrap">
+          <span class="input-prefix">$</span>
+          <input type="number" id="savings" value="100000" min="0" max="2000000" step="10000">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Estimated Annual Return</label>
+        <div class="input-wrap">
+          <span class="input-prefix">%</span>
+          <input type="number" id="returnRate" value="6" min="3" max="10" step="0.5">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Commission-Based Advisor Fee</label>
+        <div class="input-wrap">
+          <span class="input-prefix">%</span>
+          <input type="number" id="commFee" value="1.5" min="0.5" max="3" step="0.25">
+        </div>
+      </div>
+
+      <div class="input-group slider-group">
+        <div class="slider-header">
+          <label>Retirement Time Horizon</label>
+          <span class="slider-val" id="horizonVal">20 years</span>
+        </div>
+        <input type="range" id="horizon" min="5" max="35" value="20" step="1">
+        <div class="slider-labels"><span>5 years</span><span>35 years</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS TOP GRID -->
+  <div class="results-card">
+    <div class="card-label">At a Glance</div>
+    <div class="results-grid">
+      <div class="result-cell">
+        <span class="result-value teal" id="fiduciaryPortfolio">—</span>
+        <span class="result-label">Portfolio Value<br>With GTG (Fee-Only)</span>
+      </div>
+      <div class="result-cell">
+        <span class="result-value red" id="commissionPortfolio">—</span>
+        <span class="result-label">Portfolio Value<br>Commission-Based</span>
+      </div>
+      <div class="result-cell">
+        <span class="result-value" id="totalDifference">—</span>
+        <span class="result-label">Money Kept<br>By Going Fiduciary</span>
+      </div>
+    </div>
+
+    <!-- COMPARISON BARS -->
+    <div class="comparison-section">
+      <p class="comp-title">Fee drag over your retirement</p>
+      <div class="bar-row">
+        <div class="bar-label-row">
+          <span class="bar-name">GTG Wealth — 1.00% annual fee</span>
+          <span class="bar-amount" id="gtgFees">—</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill fiduciary" id="gtgBar" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label-row">
+          <span class="bar-name">Commission-Based Advisor</span>
+          <span class="bar-amount" id="commFees">—</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill commission" id="commBar" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label-row">
+          <span class="bar-name">The Fiduciary Difference</span>
+          <span class="bar-amount" id="diffFees">—</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill difference" id="diffBar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight-box">
+      <p class="insight-headline" id="insightHeadline">Enter your numbers above to see your personal result.</p>
+      <p class="insight-body" id="insightBody">The calculator uses a compounding model that accounts for fee drag — money paid in fees doesn't compound, which means even small percentage differences create significant long-term portfolio gaps.</p>
+    </div>
+  </div>
+
+  <!-- BIG DIFFERENCE NUMBER -->
+  <div class="diff-band">
+    <div class="diff-number" id="bigDiff">$0</div>
+    <div class="diff-text">
+      <h3>The true cost of not working with a fiduciary</h3>
+      <p>This is money that leaves your portfolio in fees over your retirement. A fee-only fiduciary charges only for advice — never a commission, never a product. The gap above stays in <em>your</em> account.</p>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <div class="cta-eyebrow">GTG Wealth Management · Fee-Only Fiduciary</div>
+    <h2 class="cta-headline">Your FERS retirement deserves<br>an advisor on <em>your</em> side.</h2>
+    <p class="cta-body">As a fee-only fiduciary, Tag has a legal obligation to act in your best interest. No commissions. No products. No conflicts. Just clear guidance built around your FERS pension, your TSP, and your timeline.</p>
+    <div class="cta-contacts">
+      <div class="cta-contact">
+        <span class="contact-name">Tag</span>
+        <span class="contact-email">tag@gtgwealth.com</span>
+      </div>
+      <div class="cta-contact">
+        <span class="contact-name">Elm Grove, WI</span>
+        <span class="contact-email">1.800.331.2957</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">GTG Wealth Management · gtgwealth.com · Prepared by Sherpa Systems, LLC</div>
+</div>
+
+<script>
+  function fmt(n) {
+    if (n >= 1000000) return '$' + (n/1000000).toFixed(2) + 'M';
+    if (n >= 1000) return '$' + Math.round(n/1000) + 'K';
+    return '$' + Math.round(n).toLocaleString();
+  }
+
+  function fmtFull(n) {
+    return '$' + Math.round(n).toLocaleString();
+  }
+
+  function calcPortfolio(principal, annualReturn, feeRate, years) {
+    // Compound with net return (return minus fee drag)
+    let balance = principal;
+    let totalFees = 0;
+    const netReturn = (annualReturn - feeRate) / 100;
+    const grossReturn = annualReturn / 100;
+    const feeRateDecimal = feeRate / 100;
+
+    for (let y = 0; y < years; y++) {
+      const growth = balance * grossReturn;
+      const fees = balance * feeRateDecimal;
+      totalFees += fees;
+      balance = balance + growth - fees;
+    }
+    return { balance, totalFees };
+  }
+
+  function calculate() {
+    const tsp = parseFloat(document.getElementById('tsp').value) || 0;
+    const savings = parseFloat(document.getElementById('savings').value) || 0;
+    const returnRate = parseFloat(document.getElementById('returnRate').value) || 6;
+    const commFee = parseFloat(document.getElementById('commFee').value) || 1.5;
+    const horizon = parseInt(document.getElementById('horizon').value) || 20;
+    const gtgFee = 1.0; // 100bps
+
+    const principal = tsp + savings;
+
+    const fiduciary = calcPortfolio(principal, returnRate, gtgFee, horizon);
+    const commission = calcPortfolio(principal, returnRate, commFee, horizon);
+
+    const diff = fiduciary.balance - commission.balance;
+    const feeDiff = commission.totalFees - fiduciary.totalFees;
+
+    // Update portfolio values
+    document.getElementById('fiduciaryPortfolio').textContent = fmt(fiduciary.balance);
+    document.getElementById('commissionPortfolio').textContent = fmt(commission.balance);
+    document.getElementById('totalDifference').textContent = fmt(diff);
+
+    // Update fee totals
+    document.getElementById('gtgFees').textContent = fmtFull(fiduciary.totalFees);
+    document.getElementById('commFees').textContent = fmtFull(commission.totalFees);
+    document.getElementById('diffFees').textContent = fmtFull(feeDiff);
+
+    // Update bars
+    const maxFee = commission.totalFees;
+    document.getElementById('gtgBar').style.width = (fiduciary.totalFees / maxFee * 100) + '%';
+    document.getElementById('commBar').style.width = '100%';
+    document.getElementById('diffBar').style.width = (feeDiff / maxFee * 100) + '%';
+
+    // Big number
+    document.getElementById('bigDiff').textContent = fmt(feeDiff);
+
+    // Insight
+    const yearsStr = horizon === 1 ? '1 year' : horizon + ' years';
+    const pct = principal > 0 ? ((feeDiff / principal) * 100).toFixed(0) : 0;
+    document.getElementById('insightHeadline').textContent =
+      `Over ${yearsStr}, the fee gap costs you ${fmt(feeDiff)} — ${pct}% of your starting balance.`;
+    document.getElementById('insightBody').textContent =
+      `That's money that compounds for your advisor instead of for you. A fee-only fiduciary at 100bps saves you ${fmt(feeDiff)} compared to a ${commFee}% commission-based advisor on a ${fmt(principal)} portfolio — before accounting for the additional value of unconflicted advice on your FERS benefits.`;
+  }
+
+  // Horizon slider
+  document.getElementById('horizon').addEventListener('input', function() {
+    document.getElementById('horizonVal').textContent = this.value + ' years';
+    calculate();
+  });
+
+  // All inputs
+  ['tsp','savings','returnRate','commFee'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calculate);
+  });
+
+  // Init
+  calculate();
+</script>
+</body>
+</html>
